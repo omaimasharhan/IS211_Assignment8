@@ -1,5 +1,6 @@
 import random
 import time
+import argparse
 import sys
 
 class Player:
@@ -26,7 +27,7 @@ class Player:
 
 class ComputerPlayer(Player):
     def make_decision(self):
-        if self.score < 75 and self.turn_total < 25:
+        if self.score < 100 and self.turn_total < 10:
             return "r"
         else:
             return "h"
@@ -94,25 +95,32 @@ class TimedGameProxy:
 
     def play_turn(self):
         if time.time() - self.start_time >= self.time_limit:
-            self.determine_winner()
+            self.determine_winner(time_limit_exceeded=True)
         else:
             self.game.play_turn()
+            if self.game.current_player.is_winner():
+                self.determine_winner()
 
     def play_game(self):
-        while not self.game.current_player.is_winner() and time.time() - self.start_time < self.time_limit:
-            print(f"Time Remaining: {self.time_limit - (time.time() - self.start_time)} seconds")
+        while not self.game.current_player.is_winner() and (time.time() - self.start_time) < self.time_limit:
+            remaining_time = self.time_limit - (time.time() - self.start_time)
+            if remaining_time < 0:
+                remaining_time = 0  # Ensure remaining time is non-negative
+            print(f"Time Remaining: {int(remaining_time)} seconds")
             print(f"Current Scores: {self.game.players[0].name}: {self.game.players[0].score}, {self.game.players[1].name}: {self.game.players[1].score}")
             self.play_turn()
             self.switch_player()
 
-        self.determine_winner()
+        if not self.game.current_player.is_winner() and (time.time() - self.start_time) >= self.time_limit:
+            self.determine_winner(time_limit_exceeded=True)
+        else:
+            self.determine_winner()
 
-    def determine_winner(self):
-        player1, player2 = self.game.players
-        if player1.score > player2.score:
-            print(f"{player1.name} wins with a score of {player1.score}!")
-        elif player2.score > player1.score:
-            print(f"{player2.name} wins with a score of {player2.score}!")
+    def determine_winner(self, time_limit_exceeded=False):
+        if self.game.players[0].is_winner() or time_limit_exceeded:
+            print(f"{self.game.players[0].name} wins with a score of {self.game.players[0].score}!")
+        elif self.game.players[1].is_winner() or time_limit_exceeded:
+            print(f"{self.game.players[1].name} wins with a score of {self.game.players[1].score}!")
         else:
             print("It's a tie!")
 
@@ -122,6 +130,12 @@ if __name__ == "__main__":
     player1 = PlayerFactory.create_player(player1_type, "Player 1")
     player2 = PlayerFactory.create_player(player2_type, "Player 2")
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--timed', action='store_true', help='Enable timed game mode')
+    args = parser.parse_args()
+
+    if args.timed:
+        time_limit = 60
     if "--timed" in sys.argv:
         time_limit = int(input("Enter time limit in seconds: "))
         game = TimedGameProxy(player1, player2, time_limit)
