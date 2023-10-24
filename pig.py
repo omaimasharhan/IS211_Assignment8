@@ -105,7 +105,7 @@ class TimedGameProxy:
         while not self.game.current_player.is_winner() and (time.time() - self.start_time) < self.time_limit:
             remaining_time = self.time_limit - (time.time() - self.start_time)
             if remaining_time < 0:
-                remaining_time = 0  # Ensure remaining time is non-negative
+                remaining_time = 0
             print(f"Time Remaining: {int(remaining_time)} seconds")
             print(f"Current Scores: {self.game.players[0].name}: {self.game.players[0].score}, {self.game.players[1].name}: {self.game.players[1].score}")
             self.play_turn()
